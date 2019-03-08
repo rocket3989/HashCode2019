@@ -54,16 +54,22 @@ public:
     
 };
 
+bool sortVert(Pic in1, Pic in2) { return (in1.numTags < in2.numTags); }
+
+bool sortSlide(Slide in1, Slide in2) { return (in1.numTags > in2.numTags); }
+
+
 int main () {
     //string line;
-    ifstream input ("d1.txt");
+    ifstream input ("d.txt");
     ofstream outputFile ("outputD.txt");
     Pic lastV = Pic();
     Pic inPic;
     char type;
     int numTags;
     long slideCount = 0;
-    vector<Slide> slides;
+    vector <Slide> slides;
+    vector <Pic> verticals;
     
     string output;
     string inputString;
@@ -84,13 +90,7 @@ int main () {
             }
             
             if(type == 'V'){
-                if(lastV.line == -1)
-                    lastV = inPic;
-                else{
-                    slides.push_back(Slide(inPic, lastV));
-                    slideCount++;
-                    lastV.line = -1;  
-                }
+                verticals.push_back(inPic);
             }
             
             else{
@@ -100,11 +100,45 @@ int main () {
         }
         
         input.close();
+
+        sort(verticals.begin(), verticals.end(), sortVert);
+
+        while(verticals.size() > 0) {
+            
+            if(!(verticals.size() % 100))
+                cout << verticals.size() << '\n';
+
+            int minScore = 1000;
+            long minPic = 0; 
+        
+            for(long j = 0; j < 1000 && j < verticals.size(); j++){
+                set<string> intersection;
+                set_intersection(verticals[0].tags.begin(), verticals[0].tags.end(),
+                                 verticals[j].tags.begin(), verticals[j].tags.end(), 
+                                 inserter(intersection, intersection.begin()));
+                
+                
+                if (intersection.size() < minScore) {
+                    minScore = intersection.size();
+                    minPic = j;
+                }
+            }
+
+            slides.push_back(Slide(verticals[0], verticals[minPic]));
+            slideCount++;
+
+            verticals.erase(verticals.begin() + minPic);
+            verticals.erase(verticals.begin());
+        }  
+
         
         //algorithm
 
-        Slide current = slides[slides.size() -1];
-        slides.pop_back(); 
+        sort(slides.begin(), slides.end(), sortSlide);
+
+        ll scoreCount = 0;
+        Slide current = slides[0];
+        slides.erase(slides.begin());
         
         outputFile << slideCount;
         
@@ -120,7 +154,8 @@ int main () {
             int maxScore = -1;
             long maxSlide = 0; 
         
-            for(long j = 0; j < slides.size(); j++){
+            for(long j = 0; j < 1000 && j < slides.size(); j++){
+
                 set<string> intersection;
                 set_intersection(current.tags.begin(), current.tags.end(),
                                  slides[j].tags.begin(), slides[j].tags.end(), 
@@ -135,14 +170,19 @@ int main () {
                     maxSlide = j;
                 }
             }
+            scoreCount += maxScore; 
             outputFile << '\n' << slides[maxSlide].pic1Index;
             if(slides[maxSlide].pic2Index != -1)
                 outputFile << ' ' << slides[maxSlide].pic2Index;
             current = slides[maxSlide];
             slides.erase(slides.begin() + maxSlide);
         }  
-            
+        cout << "Result score is: " << scoreCount <<". Great work!\n";
+        char blank;
+        cin >> blank;
         outputFile.close();
     }
+    
+
   return 0;
 }
